@@ -126,7 +126,7 @@ function Get-FileHashSHA256($path) {
 # STEP 5: fusee.bin check/update + Atmosphere full update + hosts files
 # -----------------------------
 $localFuseePath = Join-Path $basePath "bootloader\payloads\fusee.bin"
-$fuseeStatus = "⚠ fusee.bin check skipped"
+$fuseeStatus = "[WARN] fusee.bin check skipped"
 
 # Download latest fusee.bin from Atmosphere release
 $repoOwner = "Atmosphere-NX"
@@ -148,7 +148,7 @@ if ($release) {
         $localHash  = Get-FileHashSHA256 $localFuseePath
 
         if (-Not $localHash -or $localHash -ne $latestHash) {
-            # fusee.bin missing or outdated → prompt user
+            # fusee.bin missing or outdated; prompt user
             $userChoice = [System.Windows.Forms.MessageBox]::Show(
                 "fusee.bin is missing or out-of-date.`n`n" +
                 "Latest release: $latestTag`n`n" +
@@ -197,7 +197,7 @@ if ($release) {
                     # Verify fusee.bin hash after extraction
                     $newLocalHash = Get-FileHashSHA256 $localFuseePath
                     if ($newLocalHash -eq $latestHash) {
-                        $fuseeStatus = "✔ fusee.bin, Atmosphere, and hosts files updated"
+                        $fuseeStatus = "[OK] fusee.bin, Atmosphere, and hosts files updated"
                         [System.Windows.Forms.MessageBox]::Show(
                             "fusee.bin, Atmosphere, and hosts files successfully updated and verified.",
                             "Update Complete",
@@ -205,7 +205,7 @@ if ($release) {
                             [System.Windows.Forms.MessageBoxIcon]::Information
                         )
                     } else {
-                        $fuseeStatus = "✖ fusee.bin update failed after Atmosphere extraction"
+                        $fuseeStatus = "[FAIL] fusee.bin update failed after Atmosphere extraction"
                         [System.Windows.Forms.MessageBox]::Show(
                             "Warning: fusee.bin hash mismatch after Atmosphere extraction!",
                             "Update Failed",
@@ -214,26 +214,26 @@ if ($release) {
                         )
                     }
                 } else {
-                    $fuseeStatus = "✖ Atmosphere ZIP asset not found"
+                    $fuseeStatus = "[FAIL] Atmosphere ZIP asset not found"
                 }
             } else {
-                $fuseeStatus = "✖ fusee.bin not updated"
+                $fuseeStatus = "[FAIL] fusee.bin not updated"
             }
         } else {
-            $fuseeStatus = "✔ fusee.bin up-to-date"
+            $fuseeStatus = "[OK] fusee.bin up-to-date"
         }
 
         Remove-Item $tempFusee -Force
     }
 } else {
-    $fuseeStatus = "✖ Failed to fetch Atmosphere release info"
+    $fuseeStatus = "[FAIL] Failed to fetch Atmosphere release info"
 }
 
 # -----------------------------
 # STEP 6: hekate.bin + bootloader update
 # -----------------------------
 $localHekatePath = Join-Path $basePath "hekate.bin"
-$hekateStatus = "⚠ hekate.bin check skipped"
+$hekateStatus = "[WARN] hekate.bin check skipped"
 
 $localHash = Get-FileHashSHA256 $localHekatePath
 $hekateApiUrl = "https://api.github.com/repos/CTCaer/hekate/releases/latest"
@@ -279,30 +279,30 @@ if ($hekateRelease) {
                         $zipBinFile = Get-ChildItem -Path $tempExtract -Filter "*.bin" | Select-Object -First 1
                         if ($zipBinFile) {
                             Copy-Item -Path $zipBinFile.FullName -Destination $localHekatePath -Force
-                            $hekateStatus = "✔ hekate bootloader and bin updated to $latestTag"
+                            $hekateStatus = "[OK] hekate bootloader and bin updated to $latestTag"
                         } else {
-                            $hekateStatus = "✖ hekate.bin not found in ZIP, bootloader updated only"
+                            $hekateStatus = "[FAIL] hekate.bin not found in ZIP, bootloader updated only"
                         }
                     } else {
-                        $hekateStatus = "✖ bootloader folder not found in ZIP"
+                        $hekateStatus = "[FAIL] bootloader folder not found in ZIP"
                     }
 
                     Remove-Item $tempZip -Force
                     Remove-Item $tempExtract -Recurse -Force
                 } else {
-                    $hekateStatus = "✖ Hekate ZIP asset not found"
+                    $hekateStatus = "[FAIL] Hekate ZIP asset not found"
                 }
             } else {
-                $hekateStatus = "✖ hekate.bin not updated"
+                $hekateStatus = "[FAIL] hekate.bin not updated"
             }
         } else {
-            $hekateStatus = "✔ hekate.bin up-to-date ($latestTag)"
+            $hekateStatus = "[OK] hekate.bin up-to-date ($latestTag)"
         }
 
         Remove-Item $tempHekate -Force
     }
 } else {
-    $hekateStatus = "✖ Failed to fetch Hekate release info"
+    $hekateStatus = "[FAIL] Failed to fetch Hekate release info"
 }
 
 # -----------------------------
@@ -365,7 +365,7 @@ if ($firmwareConfirm -eq [System.Windows.Forms.DialogResult]::Yes) {
             Expand-Archive -Path $tempZip -DestinationPath $firmwarePath -Force
             Remove-Item $tempZip -Force
 
-            $firmwareStatus = "✔ Firmware updated"
+            $firmwareStatus = "[OK] Firmware updated"
         } else {
             [System.Windows.Forms.MessageBox]::Show(
                 "Could not find a ZIP asset in the latest firmware release.",
@@ -373,7 +373,7 @@ if ($firmwareConfirm -eq [System.Windows.Forms.DialogResult]::Yes) {
                 [System.Windows.Forms.MessageBoxButtons]::OK,
                 [System.Windows.Forms.MessageBoxIcon]::Error
             )
-            $firmwareStatus = "✖ Firmware update failed"
+            $firmwareStatus = "[FAIL] Firmware update failed"
         }
     } else {
         [System.Windows.Forms.MessageBox]::Show(
@@ -382,19 +382,19 @@ if ($firmwareConfirm -eq [System.Windows.Forms.DialogResult]::Yes) {
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Error
         )
-        $firmwareStatus = "✖ Firmware update failed"
+        $firmwareStatus = "[FAIL] Firmware update failed"
     }
 } else {
-    $firmwareStatus = "✖ Firmware update skipped"
+    $firmwareStatus = "[FAIL] Firmware update skipped"
 }
 
 # -----------------------------
 # STEP 9: Final summary
 # -----------------------------
 if ($didBackup) {
-    $backupStatus = "✔ Backup created"
+    $backupStatus = "[OK] Backup created"
 } else {
-    $backupStatus = "✖ Backup skipped"
+    $backupStatus = "[FAIL] Backup skipped"
 }
 
 $finalMessage = "Operation completed!`n`n"
@@ -402,7 +402,7 @@ $finalMessage += "$backupStatus`n"
 $finalMessage += "$fuseeStatus`n"
 $finalMessage += "$hekateStatus`n"
 $finalMessage += "$firmwareStatus`n"
-$finalMessage += "✔ Crash reports removed"
+$finalMessage += "[OK] Crash reports removed"
 
 [System.Windows.Forms.MessageBox]::Show(
     $finalMessage,
